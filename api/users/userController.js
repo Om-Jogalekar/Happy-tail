@@ -12,7 +12,8 @@ exports.createUser = async(req,res) =>{
             email,
             password_hash,
             profile_picture,
-            date_of_birth
+            date_of_birth,
+            status:1,
         });
 
         res.status(201).json({ user: newUser });
@@ -55,8 +56,7 @@ exports.updateUser = async(req,res) =>{
             return res.status(500).json({error : "User Not Found"});
         }
 
-        const newStatus = user.status ? parseInt(user.status) + 1 : 1;
-        await user.update({username , email , profile_picture , date_of_birth , status : newStatus});
+        await user.update({username , email , profile_picture , date_of_birth});
 
         res.status(200).json({user});
         
@@ -72,7 +72,7 @@ exports.deleteUser = async(req,res) =>{
         if(!user){
             return res.status(500).json({error : "User Not Found"});
         }       
-        await user.destroy();
+        await user.update({status:0});
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
