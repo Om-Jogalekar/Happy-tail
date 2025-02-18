@@ -5,7 +5,7 @@ const User = require("../users/userServices");
 const Post = sequelize.define('post_master' , {
     id:{
         type : DataTypes.BIGINT,
-        autoIncreament : true,
+        autoIncrement : true,
         primaryKey : true
     },
     userId : {
@@ -32,5 +32,5 @@ const Post = sequelize.define('post_master' , {
     tableName:'post_master',
     timestamps:false,
 });
-Post.belongsTo(User, {foreinKey :'userId', as : 'User'});
+Post.belongsTo(User, { foreignKey: 'userId', as: 'User' });
 module.exports = Post;
