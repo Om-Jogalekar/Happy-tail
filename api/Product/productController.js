@@ -4,7 +4,6 @@ const User = require("../users/userServices");
 const Joi = require("joi");
 
 const productSchema  = Joi.object({
-    seller_id: Joi.number().required(),
     name:Joi.string().required(),
     description:Joi.string().max(500),
     price:Joi.number().min(0).required(),
@@ -19,10 +18,12 @@ exports.createNewProduct = async(req,res)=>{
 
     if(error) return res.status(400).json({message: error.details[0].message});
 
-    const userExists = await User.findByPk(value.seller_id);
+    const userExists = await User.findByPk(req.appUser.id);
     if (!userExists) {
         return res.status(400).json({ message: "Invalid seller_id. User does not exist." });
     }
+
+    value.seller_id = req.appUser.id;
     try {
         const product = await Product.create(value);
         res.status(201).json({product});
