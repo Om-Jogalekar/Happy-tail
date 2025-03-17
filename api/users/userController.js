@@ -3,14 +3,14 @@ const bycrypt = require("bcrypt");
 
 exports.createUser = async (req, res) => {
     try {
-        const { firstName, lastName, userName, email, password } = req.body;
+        const { firstName, lastName, username, email, password } = req.body;
 
         const password_hash = await bycrypt.hash(password, 10);
 
         const newUser = await User.create({
             firstName,
             lastName,
-            userName,
+            username,
             email,
             password_hash,
             status: 1,

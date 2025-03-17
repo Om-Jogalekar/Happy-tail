@@ -5,10 +5,10 @@ const User = require("./userServices");
 
 exports.login = async (req, res) => {
 
-    let { userName, password } = req.body;
+    let { username, password } = req.body;
 
     try {
-        let user = await User.findOne({ where: { userName, status: '1' } });
+        let user = await User.findOne({ where: { username, status: '1' } });
 
         if (!user) {
             return res.status(401).json({ success: false, message: 'Invalid Username or password' });
