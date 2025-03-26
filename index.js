@@ -13,10 +13,7 @@ const groupMember = require("./api/GroupsMember/groupmembersRoutes");
 const product = require("./api/Product/productRoutes");
 const order = require('./api/Orders/ordersRoutes');
 const orderItems = require('./api/Order Items/OrderItemsRoutes');
-<<<<<<< HEAD
-=======
 const chatRoutes = require('./api/Chatsystem/ChatRoutes');
->>>>>>> b3dace0 (Initial commit with existing project)
 
 const authInterceptor = require("./services/authInterceptor");
 
@@ -33,10 +30,7 @@ app.use('/groupmember', groupMember);
 app.use('/product', product);
 app.use('/order', order);
 app.use('/orderitems', orderItems);
-<<<<<<< HEAD
-=======
 app.use('/chat', chatRoutes);
->>>>>>> b3dace0 (Initial commit with existing project)
 
 sequelize.sync({ alter: false, force: false }).then(() => {
     console.log("Database connected successfully");

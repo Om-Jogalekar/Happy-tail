@@ -1,35 +1,68 @@
 const { Sequelize } = require('sequelize');
-const Post = require('../Posts/postServices');
+const Post = require('./postServices');
 const User = require('../users/userServices');
+const Comment = require('./commentModel');
 
 exports.getAllPost = async (req, res) => {
     try {
         const posts = await Post.findAll({
-            include: {
-                model: User,
-                as: 'User', // Alias is 'User'
-                attributes: ['firstName', 'lastName'],
-            },
-            order: [['createdOn', 'DESC']],
-            attributes: ['id', 'userId', 'content', 'media', 'createdOn'],
+            attributes: [
+                'id',
+                'userId',
+                'content',
+                'media',
+                'createdOn',
+                [Sequelize.literal(`(
+                    SELECT COUNT(*) 
+                    FROM like_master AS Likes 
+                    WHERE Likes.postId = post_master.id
+                )`), 'likeCount'],
+                [Sequelize.literal(`(
+                    SELECT COUNT(*) 
+                    FROM comment_master AS Comments
+                    WHERE Comments.postId = post_master.id
+                )`), 'commentCount']
+            ],
+            order: [['createdOn', 'DESC']]
         });
 
-        const formattedPosts = posts.map(post => {
-            const fullName = post.User
-                ? post.User.firstName + " " + post.User.lastName
-                : "Unknown";
+        // Fetch comments with correct alias
+        const postIds = posts.map(post => post.id);
 
-            return {
-                id: post.id,
-                fullName: fullName,
-                content: post.content,
-                media: post.media,
-                createdOn: post.createdOn,
-            }
+        const comments = await Comment.findAll({
+            where: { postId: postIds },
+            include: [
+                {
+                    model: User,      // Correct alias used here
+                    as: 'User',        // Ensure it matches the defined alias
+                    attributes: ['firstName', 'lastName']
+                }
+            ],
+            attributes: ['id', 'postId', 'userId', 'content', 'createdOn']
         });
+
+        const formattedPosts = posts.map(post => ({
+            id: post.id,
+            content: post.content,
+            media: post.media,
+            createdOn: post.createdOn,
+            likeCount: post.dataValues.likeCount || 0,
+            commentCount: post.dataValues.commentCount || 0,
+            comments: comments
+                .filter(comment => comment.postId === post.id)
+                .map(comment => ({
+                    id: comment.id,
+                    fullName: comment.User
+                        ? `${comment.User.firstName} ${comment.User.lastName}`
+                        : "Unknown",
+                    content: comment.content,
+                    createdOn: comment.createdOn
+                }))
+        }));
 
         res.status(200).json(formattedPosts);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -90,3 +123,15 @@ exports.deletePost = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 }
+
+exports.likePost = async (req, res) => {
+    try {
+        const post = await Post.findByPk(req.params.id);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        res.status(200).json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

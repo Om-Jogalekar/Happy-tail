@@ -33,4 +33,5 @@ const Post = sequelize.define('post_master' , {
     timestamps:false,
 });
 Post.belongsTo(User, { foreignKey: 'userId', as: 'User' });
+
 module.exports = Post;

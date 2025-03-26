@@ -1,7 +1,7 @@
 const {DataTypes} = require("sequelize");
 const sequelize = require("../../config/dbSquelize");
 
-const User = sequelize.define('user_matser' ,{
+const User = sequelize.define('user_master' ,{
     id:{
         type : DataTypes.BIGINT,
         primaryKey:true,
