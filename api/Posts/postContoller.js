@@ -7,6 +7,7 @@ const Like = require('./likeModel');
 exports.getAllPost = async (req, res) => {
     try {
         const userId = req.appUser.id;
+
         const posts = await Post.findAll({
             include: [
                 {
@@ -63,6 +64,7 @@ exports.getAllPost = async (req, res) => {
             return {
                 id: post.id,
                 fullName: fullName,
+                userId: post.userId,
                 content: post.content,
                 media: post.media,
                 createdOn: post.createdOn,
