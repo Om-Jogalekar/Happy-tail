@@ -2,14 +2,16 @@ const { Sequelize } = require('sequelize');
 const Post = require('./postServices');
 const User = require('../users/userServices');
 const Comment = require('./commentModel');
+const Like = require('./likeModel');
 
 exports.getAllPost = async (req, res) => {
     try {
+        const userId = req.appUser.id;
         const posts = await Post.findAll({
             include: [
                 {
-                    model: User,      // Correct alias used here
-                    as: 'User',        // Ensure it matches the defined alias
+                    model: User,
+                    as: 'User',
                     attributes: ['firstName', 'lastName']
                 }
             ],
@@ -28,20 +30,25 @@ exports.getAllPost = async (req, res) => {
                     SELECT COUNT(*) 
                     FROM comment_master AS Comments
                     WHERE Comments.postId = post_master.id
-                )`), 'commentCount']
+                )`), 'commentCount'],
+                [Sequelize.literal(`(
+                    SELECT COUNT(*) 
+                    FROM like_master AS Likes 
+                    WHERE Likes.postId = post_master.id 
+                    AND Likes.userId = ${userId}
+                ) > 0`), 'liked']
             ],
             order: [['createdOn', 'DESC']]
         });
 
-        // Fetch comments with correct alias
         const postIds = posts.map(post => post.id);
 
         const comments = await Comment.findAll({
             where: { postId: postIds },
             include: [
                 {
-                    model: User,      // Correct alias used here
-                    as: 'User',        // Ensure it matches the defined alias
+                    model: User,
+                    as: 'User',
                     attributes: ['firstName', 'lastName']
                 }
             ],
@@ -61,6 +68,7 @@ exports.getAllPost = async (req, res) => {
                 createdOn: post.createdOn,
                 likeCount: post.dataValues.likeCount || 0,
                 commentCount: post.dataValues.commentCount || 0,
+                liked: post.dataValues.liked || false,
                 comments: comments
                     .filter(comment => comment.postId === post.id)
                     .map(comment => ({
@@ -141,11 +149,29 @@ exports.deletePost = async (req, res) => {
 
 exports.likePost = async (req, res) => {
     try {
-        const post = await Post.findByPk(req.params.id);
+        const userId = req.appUser.id; // Assuming userId is sent from the frontend
+        const postId = req.params.id;
+        const liked = req.body.liked
+
+        const post = await Post.findByPk(postId);
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });
         }
-        res.status(200).json(post);
+
+        // Check if the user has already liked the post
+        const existingLike = await Like.findOne({
+            where: { postId, userId }
+        });
+
+        if (existingLike && !liked) {
+            // Unlike the post
+            await existingLike.destroy();
+        } else {
+            // Like the post
+            await Like.create({ postId, userId });
+        }
+
+        res.status(200).json({ liked: !existingLike });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

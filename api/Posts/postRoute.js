@@ -24,7 +24,7 @@ router.post('/createpost', upload.array('media'), async (req, res, next) => {
 router.put("/:id", postController.updatePost);
 router.delete("/:id", postController.deletePost);
 
-router.put('/like/:id', postController.likePost);
+router.post('/like/:id', postController.likePost);
 router.post('/comment', postController.commentPost);
 
 module.exports = router;
