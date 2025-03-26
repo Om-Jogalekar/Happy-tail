@@ -6,6 +6,13 @@ const Comment = require('./commentModel');
 exports.getAllPost = async (req, res) => {
     try {
         const posts = await Post.findAll({
+            include: [
+                {
+                    model: User,      // Correct alias used here
+                    as: 'User',        // Ensure it matches the defined alias
+                    attributes: ['firstName', 'lastName']
+                }
+            ],
             attributes: [
                 'id',
                 'userId',
@@ -41,24 +48,32 @@ exports.getAllPost = async (req, res) => {
             attributes: ['id', 'postId', 'userId', 'content', 'createdOn']
         });
 
-        const formattedPosts = posts.map(post => ({
-            id: post.id,
-            content: post.content,
-            media: post.media,
-            createdOn: post.createdOn,
-            likeCount: post.dataValues.likeCount || 0,
-            commentCount: post.dataValues.commentCount || 0,
-            comments: comments
-                .filter(comment => comment.postId === post.id)
-                .map(comment => ({
-                    id: comment.id,
-                    fullName: comment.User
-                        ? `${comment.User.firstName} ${comment.User.lastName}`
-                        : "Unknown",
-                    content: comment.content,
-                    createdOn: comment.createdOn
-                }))
-        }));
+        const formattedPosts = posts.map(post => {
+            const fullName = post.User
+                ? post.User.firstName + " " + post.User.lastName
+                : "Unknown";
+
+            return {
+                id: post.id,
+                fullName: fullName,
+                content: post.content,
+                media: post.media,
+                createdOn: post.createdOn,
+                likeCount: post.dataValues.likeCount || 0,
+                commentCount: post.dataValues.commentCount || 0,
+                comments: comments
+                    .filter(comment => comment.postId === post.id)
+                    .map(comment => ({
+                        id: comment.id,
+                        userId: comment.userId,
+                        fullName: comment.User
+                            ? `${comment.User.firstName} ${comment.User.lastName}`
+                            : "Unknown",
+                        content: comment.content,
+                        createdOn: comment.createdOn
+                    }))
+            }
+        });
 
         res.status(200).json(formattedPosts);
     } catch (error) {
@@ -133,5 +148,55 @@ exports.likePost = async (req, res) => {
         res.status(200).json(post);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+exports.commentPost = async (req, res) => {
+    try {
+        const { postId, comment } = req.body;
+        const userId = req.appUser.id;
+
+        // Validate input
+        if (!comment || !postId) {
+            return res.status(400).json({ error: 'Post ID and comment are required.' });
+        }
+
+        // Check if post exists
+        const post = await Post.findByPk(postId);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        // Add the comment
+        const newComment = await Comment.create({
+            postId,
+            userId,
+            content: comment,
+        });
+
+        // Fetch the newly created comment with user details
+        const commentData = await Comment.findOne({
+            where: { id: newComment.id },
+            include: [
+                {
+                    model: User,
+                    as: 'User', // Ensure this matches your model association
+                    attributes: ['firstName', 'lastName']
+                }
+            ],
+            attributes: ['id', 'postId', 'userId', 'content', 'createdOn']
+        });
+
+        if (!commentData) {
+            return res.status(500).json({ error: 'Failed to retrieve the comment details.' });
+        }
+
+        res.status(200).json({
+            message: 'Comment added successfully!',
+            data: commentData
+        });
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        res.status(500).json({ error: 'Failed to add comment. Please try again.' });
     }
 };

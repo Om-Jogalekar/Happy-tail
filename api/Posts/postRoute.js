@@ -25,5 +25,6 @@ router.put("/:id", postController.updatePost);
 router.delete("/:id", postController.deletePost);
 
 router.put('/like/:id', postController.likePost);
+router.post('/comment', postController.commentPost);
 
 module.exports = router;
