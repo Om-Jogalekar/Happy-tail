@@ -15,6 +15,7 @@ const order = require('./api/Orders/ordersRoutes');
 const orderItems = require('./api/Order Items/OrderItemsRoutes');
 const chatRoutes = require('./api/Chatsystem/ChatRoutes');
 const communityRoutes = require('./api/Community/CommunityRoute');
+const appointmentRoutes = require('./api/Appointments/AppointmentRoutes');
 
 const authInterceptor = require("./services/authInterceptor");
 
@@ -33,6 +34,7 @@ app.use('/order', order);
 app.use('/orderitems', orderItems);
 app.use('/chat', chatRoutes);
 app.use('/community', communityRoutes);
+app.use('/appointment', appointmentRoutes);
 
 sequelize.sync({ alter: false, force: false }).then(() => {
     console.log("Database connected successfully");
