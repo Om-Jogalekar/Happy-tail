@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 const PUBLIC_ROUTES = [
     { method: "POST", regex: /^\/users\/?$/ },
     { method: "POST", regex: /^\/users\/login$/ },
-    { method: "GET", regex: /^\/uploads\/.+/ }
+    { method: "GET", regex: /^\/uploads\/.+/ },
+    { method: "GET", regex: /^\/groups\/?$/ }
 ];
 
 module.exports = (req, res, next) => {

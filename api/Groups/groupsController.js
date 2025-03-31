@@ -1,3 +1,4 @@
+const { Sequelize } = require('sequelize');
 const Group = require("./groupsModel");
 const User = require("../users/userServices");
 
@@ -47,22 +48,34 @@ exports.getAllGroups = async (req, res) => {
 exports.getGroupbyId = async (req, res) => {
     try {
         const { id } = req.params;
+
         const group = await Group.findByPk(id, {
             include: [
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['username', 'email'],
-
-                },
+                    attributes: ['firstName', 'lastName', 'email'],
+                }
             ],
-        })
+            attributes: {
+                include: [
+                    [
+                        Sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM group_member_master AS members
+                            WHERE members.groupId = group_master.id
+                        )`),
+                        'memberCount'
+                    ]
+                ]
+            }
+        });
 
         if (!group) {
             return res.status(404).json({ error: 'Group not found' });
         }
 
-        res.status(200).json(group)
+        res.status(200).json(group);
 
     } catch (error) {
         res.status(500).json({ error: error.message });
